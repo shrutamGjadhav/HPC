@@ -1,0 +1,1059 @@
+!apt-get install libomp-dev
+
+
+!g++ -fopenmp Q.cpp -o Q
+!./Q
+->1A<-
+#include<iostream>
+#include<stdlib.h>
+#include<omp.h>
+#include<queue>
+
+
+
+
+using namespace std;
+
+
+
+
+class Node
+{
+    public:
+
+
+
+
+    int data;
+    Node* left = NULL;
+    Node* right = NULL;
+};
+
+
+
+
+Node* insert(Node* root , int data)
+{
+    if(root == NULL)
+    {
+        root = new Node;
+        root -> data = data;
+        return root;
+    }
+
+
+
+
+    queue<Node*> q;
+   
+    q.push(root);
+    Node *temp;
+    while(!q.empty())
+    {
+        temp=q.front();
+        q.pop();
+
+
+
+
+        if(temp->left == NULL)
+        {
+            Node* new_node = new Node;
+
+
+
+
+            new_node -> data = data;
+
+
+
+
+            temp -> left = new_node;
+
+
+
+
+            return root;
+        }
+        else
+        {
+            q.push(temp -> left);
+        }
+
+
+
+
+        if(temp->right == NULL)
+        {
+            Node* new_node = new Node;
+
+
+
+
+            new_node -> data = data;
+           
+            temp -> right = new_node;
+
+
+
+
+            return root;
+        }
+        else
+        {
+            q.push(temp -> right);
+        }
+
+
+
+
+    }
+}
+
+
+
+
+void BFS(Node *root)
+{
+    queue<Node*> q;
+
+
+
+
+    q.push(root);
+
+
+
+
+    while(!q.empty())
+    {
+        #pragma omp parallel for num_threads(10)
+        for(int i = 0 ; i < q.size() ; i++)
+        {
+            cout<< "->"<<omp_get_thread_num()<<"<-"<<endl;
+            Node *current_node;
+            #pragma omp critical
+            {
+                current_node = q.front();
+               
+                q.pop();
+
+
+
+
+                cout << current_node->data << "  ";
+            }
+
+
+
+
+            #pragma omp critical
+            {
+                if(current_node -> left != NULL)
+                {
+                    q.push(current_node -> left);
+                }
+
+
+
+
+                if(current_node -> right != NULL)
+                {
+                    q.push(current_node -> right);
+                }
+            }
+        }
+    }
+
+
+
+
+   
+}
+
+
+
+
+int main()
+{
+    Node* root = NULL;
+
+
+
+
+    int data;
+
+
+
+
+    int n;
+
+
+
+
+    cout<<"\n enter num of nodes =>";
+
+
+
+
+    cin>>n;
+
+
+
+
+    for(int i = 0 ; i < n ; i++)
+    {
+        cout<<"\n enter data=>";
+     
+        cin>>data;
+
+
+
+
+      root=insert(root,data);
+     
+    }
+
+
+
+
+
+    BFS(root);
+}
+
+
+
+
+->1B<-
+
+#include <iostream>
+
+#include <vector>
+
+#include <stack>
+
+#include <omp.h>
+
+
+
+
+using namespace std;
+
+
+
+
+const int MAX = 100000;
+
+vector<int> graph[MAX];
+
+bool visited[MAX];
+
+
+
+
+void dfs(int node) {
+
+stack<int> s;
+
+s.push(node);
+
+
+
+
+while (!s.empty()) {
+
+     int curr_node = s.top();
+
+     s.pop();
+
+
+
+
+     if (!visited[curr_node]) {
+
+         visited[curr_node] = true;
+
+        
+
+         if (visited[curr_node]) {
+
+         cout << curr_node << " ";
+
+     }
+
+
+
+
+         #pragma omp parallel for
+
+         for (int i = 0; i < graph[curr_node].size(); i++) {
+
+             int adj_node = graph[curr_node][i];
+
+             if (!visited[adj_node]) {
+
+                 s.push(adj_node);
+
+             }
+
+         }
+
+     }
+
+}
+
+}
+
+
+
+
+int main() {
+
+int n, m, start_node;
+
+cout << "Enter No of Node,Edges,and start node:" ;
+
+cin >> n >> m >> start_node;
+
+         //n: node,m:edges
+
+         
+
+cout << "Enter Pair of edges:" ;
+
+for (int i = 0; i < m; i++) {
+
+     int u, v;
+
+    
+
+     cin >> u >> v;
+
+//u and v: Pair of edges
+
+     graph[u].push_back(v);
+
+     graph[v].push_back(u);
+
+}
+
+
+
+
+#pragma omp parallel for
+
+for (int i = 0; i < n; i++) {
+
+     visited[i] = false;
+
+}
+
+
+
+
+dfs(start_node);
+
+
+
+
+/* for (int i = 0; i < n; i++) {
+
+     if (visited[i]) {
+
+         cout << i << " ";
+
+     }
+
+}*/
+
+
+
+
+return 0;
+
+}
+
+->2A<-
+
+/*
+Name: Alwis Shaji
+Roll no: COBA001
+
+
+Write a program to implement Parallel Bubble Sort. Use existing algorithms
+and measure the performance of sequential and parallel algorithms.
+*/
+#include<iostream>
+#include<stdlib.h>
+#include<omp.h>
+using namespace std;
+
+
+
+void bubble(int *a, int n)
+{
+  for( int i = 0; i < n; i++ )
+  {
+  int first = i % 2;
+  #pragma omp parallel for shared(a,first)
+  for( int j = first; j < n-1; j += 2 )
+  {
+    if( a[ j ] > a[ j+1 ] )
+    {
+      swap( a[ j ], a[ j+1 ] );
+    }
+  }
+  }
+}
+
+
+void swap(int *a, int i , int j)
+{
+  int temp;
+
+
+  temp=a[i];
+  a[i]=a[j];
+  a[j]=temp;
+}
+
+
+int main()
+{
+  int *a,n;
+  cout<<"\n enter total no of elements=>";
+  cin>>n;
+  a=new int[n];
+  cout<<"\n enter elements=>";
+  for(int i=0;i<n;i++)
+  {
+    cin>>a[i];
+  }
+ 
+  bubble(a,n);
+ 
+  cout<<"\n sorted array is=>";
+  for(int i=0;i<n;i++)
+  {
+    cout<<a[i]<<endl;
+  }
+
+
+return 0;
+}
+->2B<-
+/*
+Name: Alwis Shaji
+Roll no: COBA001
+
+
+Write a program to implement Parallel Merge Sort. Use existing algorithms
+and measure the performance of sequential and parallel algorithms.
+*/
+#include <iostream>
+#include <vector>
+#include <omp.h>
+#include <chrono>
+
+
+using namespace std;
+
+
+void merge(vector<int>& arr, int left, int middle, int right) {
+    int i, j, k;
+    int n1 = middle - left + 1;
+    int n2 = right - middle;
+ 
+    vector<int> L(n1), R(n2);
+ 
+    for (i = 0; i < n1; i++)
+        L[i] = arr[left + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[middle + 1 + j];
+ 
+    i = 0;
+    j = 0;
+    k = left;
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) {
+            arr[k] = L[i];
+            i++;
+        }
+        else {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+ 
+    while (i < n1) {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+ 
+    while (j < n2) {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+ 
+void mergeSort(vector<int>& arr, int left, int right) {
+    if (left >= right) {
+        return;
+    }
+
+
+    int middle = (left+right) / 2;
+
+
+    #pragma omp parallel sections num_threads(2)
+    {
+        #pragma omp section
+        {
+            mergeSort(arr, left, middle);
+        }
+
+
+        #pragma omp section
+        {
+            mergeSort(arr, middle + 1, right);
+        }
+    }
+
+
+    merge(arr, left, middle, right);
+}
+void smergeSort(vector<int>& arr, int left, int right) {
+    if (left >= right) {
+        return;
+    }
+
+
+    int middle = left + (right - left) / 2;
+
+
+    mergeSort(arr, left, middle);
+ 
+    mergeSort(arr, middle + 1, right);
+
+
+    merge(arr, left, middle, right);
+}
+
+
+int main() {
+    vector<int> arr = { 12, 11, 13, 5, 6, 7 };
+    int n = arr.size();
+ 
+    auto start = std::chrono::high_resolution_clock::now();
+
+
+    // Code block to measure the execution time
+    // ...
+    mergeSort(arr, 0, n - 1);
+    // End the timer
+    auto end = std::chrono::high_resolution_clock::now();
+
+
+    // Calculate the duration
+    std::chrono::duration<double> duration1 = end - start;
+
+
+    // Print the execution time in seconds
+    std::cout << "Execution time: s " << duration1.count() << " seconds" << std::endl;
+
+
+    start = std::chrono::high_resolution_clock::now();
+
+
+    // Code block to measure the execution time
+    // ...
+    smergeSort(arr, 0, n - 1);
+    // End the timer
+     end = std::chrono::high_resolution_clock::now();
+
+
+    // Calculate the duration
+    std::chrono::duration<double> duration2 = end - start;
+
+
+    // Print the execution time in seconds
+    std::cout << "Execution time: " << duration2.count() << " seconds" << std::endl;
+
+
+
+
+    cout << "Sorted array: ";
+    for (int i = 0; i < n; i++)
+        cout << arr[i] << " ";
+    cout << endl;
+   
+ 
+    return 0;
+}
+->2A<-
+/*
+Name: Alwis Shaji
+Roll no: COBA001
+
+
+Write a program to implement Parallel Bubble Sort. Use existing algorithms
+and measure the performance of sequential and parallel algorithms.
+*/
+#include<iostream>
+#include<stdlib.h>
+#include<omp.h>
+using namespace std;
+
+
+
+void bubble(int *a, int n)
+{
+  for( int i = 0; i < n; i++ )
+  {
+  int first = i % 2;
+  #pragma omp parallel for shared(a,first)
+  for( int j = first; j < n-1; j += 2 )
+  {
+    if( a[ j ] > a[ j+1 ] )
+    {
+      swap( a[ j ], a[ j+1 ] );
+    }
+  }
+  }
+}
+
+
+void swap(int *a, int i , int j)
+{
+  int temp;
+
+
+  temp=a[i];
+  a[i]=a[j];
+  a[j]=temp;
+}
+
+
+int main()
+{
+  int *a,n;
+  cout<<"\n enter total no of elements=>";
+  cin>>n;
+  a=new int[n];
+  cout<<"\n enter elements=>";
+  for(int i=0;i<n;i++)
+  {
+    cin>>a[i];
+  }
+ 
+  bubble(a,n);
+ 
+  cout<<"\n sorted array is=>";
+  for(int i=0;i<n;i++)
+  {
+    cout<<a[i]<<endl;
+  }
+
+
+return 0;
+}
+
+
+->2B<-
+/*
+Name: Alwis Shaji
+Roll no: COBA001
+
+
+Write a program to implement Parallel Merge Sort. Use existing algorithms
+and measure the performance of sequential and parallel algorithms.
+*/
+#include <iostream>
+#include <vector>
+#include <omp.h>
+#include <chrono>
+
+
+using namespace std;
+
+
+void merge(vector<int>& arr, int left, int middle, int right) {
+    int i, j, k;
+    int n1 = middle - left + 1;
+    int n2 = right - middle;
+ 
+    vector<int> L(n1), R(n2);
+ 
+    for (i = 0; i < n1; i++)
+        L[i] = arr[left + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[middle + 1 + j];
+ 
+    i = 0;
+    j = 0;
+    k = left;
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) {
+            arr[k] = L[i];
+            i++;
+        }
+        else {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+ 
+    while (i < n1) {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+ 
+    while (j < n2) {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+ 
+void mergeSort(vector<int>& arr, int left, int right) {
+    if (left >= right) {
+        return;
+    }
+
+
+    int middle = (left+right) / 2;
+
+
+    #pragma omp parallel sections num_threads(2)
+    {
+        #pragma omp section
+        {
+            mergeSort(arr, left, middle);
+        }
+
+
+        #pragma omp section
+        {
+            mergeSort(arr, middle + 1, right);
+        }
+    }
+
+
+    merge(arr, left, middle, right);
+}
+void smergeSort(vector<int>& arr, int left, int right) {
+    if (left >= right) {
+        return;
+    }
+
+
+    int middle = left + (right - left) / 2;
+
+
+    mergeSort(arr, left, middle);
+ 
+    mergeSort(arr, middle + 1, right);
+
+
+    merge(arr, left, middle, right);
+}
+
+
+int main() {
+    vector<int> arr = { 12, 11, 13, 5, 6, 7 };
+    int n = arr.size();
+ 
+    auto start = std::chrono::high_resolution_clock::now();
+
+
+    // Code block to measure the execution time
+    // ...
+    mergeSort(arr, 0, n - 1);
+    // End the timer
+    auto end = std::chrono::high_resolution_clock::now();
+
+
+    // Calculate the duration
+    std::chrono::duration<double> duration1 = end - start;
+
+
+    // Print the execution time in seconds
+    std::cout << "Execution time: s " << duration1.count() << " seconds" << std::endl;
+
+
+    start = std::chrono::high_resolution_clock::now();
+
+
+    // Code block to measure the execution time
+    // ...
+    smergeSort(arr, 0, n - 1);
+    // End the timer
+     end = std::chrono::high_resolution_clock::now();
+
+
+    // Calculate the duration
+    std::chrono::duration<double> duration2 = end - start;
+
+
+    // Print the execution time in seconds
+    std::cout << "Execution time: " << duration2.count() << " seconds" << std::endl;
+
+
+
+
+    cout << "Sorted array: ";
+    for (int i = 0; i < n; i++)
+        cout << arr[i] << " ";
+    cout << endl;
+   
+ 
+    return 0;
+}
+
+
+->3<-
+/*
+Name: Alwis Shaji
+Roll no: COBA001
+
+
+Implement Min, Max, Sum and Average operations using Parallel
+Reduction.
+*/
+#include <iostream>
+//#include <vector>
+#include <omp.h>
+#include <climits>
+using namespace std;
+
+
+void min_reduction(int arr[], int n) {
+  int min_value = INT_MAX;
+  #pragma omp parallel for reduction(min: min_value)
+  for (int i = 0; i < n; i++) {
+  if (arr[i] < min_value) {
+    min_value = arr[i];
+  }
+  }
+  cout << "Minimum value: " << min_value << endl;
+}
+
+
+void max_reduction(int arr[], int n) {
+  int max_value = INT_MIN;
+  #pragma omp parallel for reduction(max: max_value)
+  for (int i = 0; i < n; i++) {
+  if (arr[i] > max_value) {
+    max_value = arr[i];
+  }
+  }
+  cout << "Maximum value: " << max_value << endl;
+}
+
+
+void sum_reduction(int arr[], int n) {
+  int sum = 0;
+   #pragma omp parallel for reduction(+: sum)
+   for (int i = 0; i < n; i++) {
+  sum += arr[i];
+  }
+  cout << "Sum: " << sum << endl;
+}
+
+
+void average_reduction(int arr[], int n) {
+  int sum = 0;
+  #pragma omp parallel for reduction(+: sum)
+  for (int i = 0; i < n; i++) {
+  sum += arr[i];
+  }
+  cout << "Average: " << (double)sum / (n-1) << endl;
+}
+
+
+int main() {
+    int *arr,n;
+    cout<<"\n enter total no of elements=>";
+    cin>>n;
+    arr=new int[n];
+    cout<<"\n enter elements=>";
+    for(int i=0;i<n;i++)
+    {
+     cin>>arr[i];
+    }
+
+
+//   int arr[] = {5, 2, 9, 1, 7, 6, 8, 3, 4};
+//   int n = size(arr);
+
+
+  min_reduction(arr, n);
+  max_reduction(arr, n);
+  sum_reduction(arr, n);
+  average_reduction(arr, n);
+}
+
+
+->4A<-
+%%cu
+#include <stdio.h>
+#include <stdlib.h>
+
+
+#define N 1000000
+
+
+__global__ void add(int *a, int *b, int *c) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid < N) {
+        c[tid] = a[tid] + b[tid];
+    }
+}
+
+
+int main() {
+    int *a, *b, *c;
+    int *d_a, *d_b, *d_c;
+    int size = N * sizeof(int);
+
+
+    // Allocate memory on host
+    a = (int*)malloc(size);
+    b = (int*)malloc(size);
+    c = (int*)malloc(size);
+
+
+    // Initialize arrays
+    for (int i = 0; i < N; i++) {
+        a[i] = i;
+        b[i] = i * 2;
+    }
+
+
+    // Allocate memory on device
+    cudaMalloc(&d_a, size);
+    cudaMalloc(&d_b, size);
+    cudaMalloc(&d_c, size);
+
+
+    // Copy data from host to device
+    cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
+
+
+    // Launch kernel with 1 million threads
+    add<<<(N + 255) / 256, 256>>>(d_a, d_b, d_c);
+
+
+    // Copy result from device to host
+    cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
+
+
+    // Print first and last elements of result
+    printf("c[0]=%d, c[%d] = %d",c[0],N-1,c[N-1]);
+
+
+    // Free memory
+    free(a);
+    free(b);
+    free(c);
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
+
+
+    return 0;
+}
+->4B<-
+%%cu
+#include <stdio.h>
+#include <stdlib.h>
+
+
+#define N 1024
+#define BLOCK_SIZE 16
+
+
+__global__ void matrixMul(int *a, int *b, int *c, int width) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int sum = 0;
+    for (int i = 0; i < width; i++) {
+        sum += a[row * width + i] * b[i * width + col];
+    }
+    c[row * width + col] = sum;
+}
+
+
+int main() {
+    int *a, *b, *c;
+    int *d_a, *d_b, *d_c;
+    int size = N * N * sizeof(int);
+
+
+    // Allocate memory on host
+    a = (int*)malloc(size);
+    b = (int*)malloc(size);
+    c = (int*)malloc(size);
+
+
+    // Initialize matrices
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            a[i * N + j] = i + j;
+            b[i * N + j] = i - j;
+        }
+    }
+
+
+    // Allocate memory on device
+    cudaMalloc(&d_a, size);
+    cudaMalloc(&d_b, size);
+    cudaMalloc(&d_c, size);
+
+
+    // Copy data from host to device
+    cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
+
+
+    // Launch kernel with 2D grid and 2D block
+    dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 dimGrid((N + dimBlock.x - 1) / dimBlock.x, (N + dimBlock.y - 1) / dimBlock.y);
+    matrixMul<<<dimGrid, dimBlock>>>(d_a, d_b, d_c, N);
+
+
+    // Copy result from device to host
+    cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
+
+
+    // Print first and last elements of result
+    printf("c[0][0] = %d, c[%d][%d] = %d", c[0], N-1, N-1, c[(N-1) * N + (N-1)]);
+
+
+    // Free memory
+    free(a);
+    free(b);
+    free(c);
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
+
+
+    return 0;
+
+
+!nvcc --version
+
+
+!pip install git+https://github.com/andreinechaev/nvcc4jupyter.git
+
+
+%load_ext nvcc_plugin
+->1<-
+}
