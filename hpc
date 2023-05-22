@@ -1057,3 +1057,72 @@ int main() {
 %load_ext nvcc_plugin
 ->1<-
 }
+
+%%cu
+#include <stdio.h>
+#include <stdlib.h>
+
+#define N 1024
+#define THREADS 32
+
+__global__ void matrixMul(int *a, int *b, int *c, int width) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int sum = 0;
+    for (int i = 0; i < width; i++) {
+        sum += a[row * width + i] * b[i * width + col];
+    }
+    c[row * width + col] = sum;
+}
+
+int main() {
+    int *a, *b, *c;
+    int *d_a, *d_b, *d_c;
+    int size = N * N * sizeof(int);
+
+    // Allocate memory on host
+    a = (int*)malloc(size);
+    b = (int*)malloc(size);
+    c = (int*)malloc(size);
+
+    // Initialize matrices
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            a[i * N + j] = (i + j )% 10;
+            b[i * N + j] = (i + j )% 10;
+        }
+    }
+
+    // Allocate memory on device
+    cudaMalloc(&d_a, size);
+    cudaMalloc(&d_b, size);
+    cudaMalloc(&d_c, size);
+
+    // Copy data from host to device
+    cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
+
+    // Launch kernel with 2D grid and 2D block
+     int BLOCKS = N / THREADS;
+
+    // Use dim3 structs for block and grid dimensions
+    dim3 threads(THREADS, THREADS);
+    dim3 blocks(BLOCKS, BLOCKS);
+    matrixMul<<<blocks, threads>>>(d_a, d_b, d_c, N);
+
+    // Copy result from device to host
+    cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
+
+    // Print first and last elements of result
+    printf("c[0][0] = %d, c[%d][%d] = %d", c[0], N-1, N-1, c[(N-1) * N + (N-1)]);
+
+    // Free memory
+    free(a);
+    free(b);
+    free(c);
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_c);
+
+    return 0;
+}
